@@ -4,7 +4,42 @@ import { supabase } from '../lib/supabaseClient';
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'employees' },
+        (payload) => {
+          // Normalize event type across supabase versions
+          const eventType = payload.eventType || payload.event;
 
+          if (eventType === 'INSERT') {
+            setEmployees((prev) => [payload.new, ...prev]);
+          } else if (eventType === 'UPDATE') {
+            setEmployees((prev) =>
+              prev.map((e) => (e.id === payload.new.id ? payload.new : e))
+            );
+          } else if (eventType === 'DELETE') {
+            setEmployees((prev) => prev.filter((e) => e.id !== payload.old.id));
+          } else {
+            console.log('Realtime payload:', payload);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      // best-effort cleanup
+      try {
+        channel.unsubscribe();
+      } catch (e) {
+        /* ignore */
+      }
+      // removeChannel may be supported depending on supabase client version
+      if (supabase.removeChannel) supabase.removeChannel(channel).catch(() => {});
+    };
+  }, []);
   useEffect(() => {
     const fetchEmployees = async () => {
       const { data, error } = await supabase
