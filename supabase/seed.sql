@@ -1,4 +1,4 @@
-insert into public.employees (name, email, position, salary) values
+insert into public.employees (name, email, position, salary) values 
   ('Alice Johnson', 'alice.johnson@example.com', 'Software Manager-(PR to main)', 95000.00),
   ('Miguel Santos', 'miguel.santos@example.com', 'Product Manager', 105000.00),
   ('Priya Patel', 'priya.patel@example.com', 'Data Analyst', 78000.00),
